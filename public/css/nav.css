@@ -1,0 +1,40 @@
+.navigation {
+    display: flex;
+
+    background-color: #EBEBEB;
+}
+
+.nav li {
+    padding-bottom: 5px;
+}
+
+.nav li:hover .sub-menu {
+    display: block;
+}
+
+.sub-menu {
+    display: none;
+    position: absolute;
+    padding: 10px;
+    background-color: #EBEBEB;
+}
+
+.sub-menu li {
+    margin: 0;
+}
+
+.autho {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    margin-left: 15px;
+}
+.autho__item {
+}
+.autho__item:last-child {
+    padding: 5px;
+    border: 1px solid #000;
+}
+.autho__link {
+}

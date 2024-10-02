@@ -1,0 +1,41 @@
+.header__nav {
+}
+.nav__link {
+}
+.nav__logo {
+    margin: 0 auto;
+}
+.header__content {
+    padding-top: 55px;
+}
+.header__title {
+    text-align: center;
+    text-transform: uppercase;
+}
+.header__form {
+    padding-top: 55px;
+}
+.form__item {
+    margin-bottom: 50px;
+}
+.form__item p {
+    text-align: center;
+}
+.form__item input {
+    display: block;
+    margin: 15px auto 0;
+    width: 20%;
+    height: 25px;
+    outline: none;
+    font-size: 18px;
+    border-radius: 5px;
+    border: 1px solid #000;
+}
+.form__button {
+    display: block;
+    margin: 0 auto;
+    outline: none;
+    border: 1px solid #000;
+    text-align: center;
+    cursor: pointer;
+}
