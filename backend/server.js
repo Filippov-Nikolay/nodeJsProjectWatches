@@ -85,37 +85,28 @@ app.post('/authentication', function(req, res) {
 });
 
 
-app.get('/samsung', function(req, res) {
-    /*
-        Создать заголовок
-        создать запрос и получить данные
-        Создать массив объектов (карточки: {
-            srcImg: '',
-            name: '',
-            price: '',
-            description: '',
-            discount: '' (if discount = 0, ничего не выводит, а иначе: выводит скидку)
-        })
-        заполнить карточки и вывести
-    */
+app.get('/products/:brand', function(req, res) {
+    const brand = req.params.brand;
 
 
-    res.render('products', { 
-        title: 'Samsung',
-        dataTHead: null, dataTBody: null,
-        inputAdd: null, inputEdit: null, inputDelete: null
+    const request = new mssql.Request(connection);
+    const query = `
+        SELECT Products.* FROM Products JOIN Brands ON Products.brandID = Brands.ID WHERE Brands.name = @brand
+    `;
+    
+    request.input('brand', mssql.VarChar, brand);
+    request.query(query, (err, result) => {
+        if (err) {
+            console.log("Request execution error: ", err);
+            return res.send("Error loading data");
+        }
+
+        if (result.recordset.length > 0) {
+            res.render('products', { brand: brand, products: result.recordset });
+        } else {
+            res.send("No products found for this brand");
+        }
     });
-});
-app.get('/apple', function(req, res) {
-    res.sendFile(path.join(__dirname, "../index-apple.html"));
-});
-app.get('/alfex', function(req, res) {
-    res.sendFile(path.join(__dirname, "../index-alfex.html"));
-});
-
-
-app.get('/discounts', function(req, res) {
-    res.sendFile(path.join(__dirname, "../discounts.html"));
 });
 
 

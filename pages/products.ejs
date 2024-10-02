@@ -1,11 +1,121 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
+
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <link rel="stylesheet" href="/css/nav.css">
+    <link rel="stylesheet" href="/css/index-watches.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="shortcut icon" href="/img/mini-logo.png" type="image/x-icon">
+    <title>
+        <%= brand %> часы
+    </title>
 </head>
+
 <body>
-    <%- title %>
+    <div class="header header-fixed">
+        <div class="container">
+            <div class="navigation">
+                <a href="/"><img src="/img/logo.png" alt="" class="logo"></a>
+                <ul class="nav">
+                    <li>
+                        <a href="#">
+                            Бренды
+                            <ul class="sub-menu">
+                                <li><a href="/products/Apple">Apple</a></li>
+                                <li><a href="/products/Samsung">Samsung</a></li>
+                                <li><a href="/products/Alfex">Alfex</a></li>
+                            </ul>
+                        </a>
+                    </li>
+                    <li><a href="/discounts">Скидки</a></li>
+                    <li><a href="/elite-watches">Элитные часы</a></li>
+                    <li><a href="/man-watches">Мужские часы</a></li>
+                    <li><a href="/women-watches">Женские часы</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="content content-header-fixed">
+        <div class="container">
+            <div class="content-title">
+                <%= brand %> часы
+            </div>
+            <div class="line"></div>
+            <div class="cards">
+                <% products.forEach(function(product) { %>
+                    <div class="cards-item">
+                        <% if (product.discount> 0) { %>
+                            <div class="card-discounts">
+                                <p class="discounts-item">Скидка!</p>
+                            </div>
+                            <% } %>
+                                <div class="cards-img">
+                                    <div class="cards-link" onclick="openBox('box<%= product.id %>')">
+                                        <img src="<%= product.image %>" alt="<%= product.name %>">
+                                    </div>
+                                </div>
+                                <div class="cards-title">
+                                    <%= product.name %>
+                                </div>
+                                <div class="cards-money">
+                                    <%= product.price %>p
+                                </div>
+                                <a href="#" class="cards-button">Купить</a>
+
+                                <div id="box<%= product.id %>" class="box" style="display: none;">
+                                    <div class="bg-close" onclick="openBox('box<%= product.id %>');"></div>
+                                    <div class="box__container">
+                                        <div class="box__wrapper">
+                                            <div class="box__image">
+                                                <img src="<%= product.image %>" alt="<%= product.name %>">
+                                            </div>
+                                            <div class="box__inforamtion">
+                                                <h1 class="box__title">
+                                                    <%= product.name %>
+                                                </h1>
+                                                <p class="box__info">
+                                                    <%= product.description %>
+                                                </p>
+                                                <div class="box__sum">Цена - <%= product.price %>p</div>
+                                                <a href="#" class="cards-button box__button">Купить</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                    </div>
+                    <% }) %>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer anim-bloc">
+        <div class="container">
+            <div class="footer-content">
+                <div class="socials">
+                    <!-- Социальные сети -->
+                </div>
+                <div class="footer-bottom">
+                    <div class="copyright">
+                        &copy; 2024 Все права защищены.
+                    </div>
+                    <div class="footer-navigation">
+                        <ul class="nav">
+                            <li><a href="/">Бренды</a></li>
+                            <li><a href="/discounts">Скидки</a></li>
+                            <li><a href="/elite-watches">Элитные часы</a></li>
+                            <li><a href="/man-watches">Мужские часы</a></li>
+                            <li><a href="/women-watches">Женские часы</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/js/main.js"></script>
 </body>
+
 </html>
