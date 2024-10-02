@@ -22,6 +22,8 @@ app.use(express.urlencoded({ extended: true }));
 app.set('views', path.join(__dirname, '../pages'));
 app.set('view engine', 'ejs');
 
+// JSON
+app.use(express.json());
 
 
 app.get('/', function(req, res) {
@@ -32,6 +34,130 @@ app.get('/', function(req, res) {
 app.get('/signIn', function(req, res) {
     res.sendFile(path.join(__dirname, "../signIn.html"));
 });
+
+
+
+
+function GetThead(tableName, callback) {
+    let ps = new mssql.Request(connection);
+
+    let self = this;
+    self.tableRows = ``;
+
+    let query = `
+        SELECT COLUMN_NAME
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_NAME = '${tableName}';
+    `;
+
+    ps.query(query, (err, data) => {
+        self.tableRows += '<tr>';
+        self.tableRows += `<td>Function</td>`;
+        data.recordset.forEach((row, index) => {
+            self.tableRows += `<td>${row.COLUMN_NAME}</td>`;
+        });
+        self.tableRows += '</tr>';
+
+        callback(null, self.tableRows);
+    });
+}
+function GetTbody(tableName, callback) {
+    let ps = new mssql.Request(connection);
+
+    let self = this;
+    self.tableRows = ``;
+
+    let query = `
+        SELECT *
+        FROM ${tableName}
+    `;
+
+    ps.query(query, (err, data) => {
+        data.recordset.forEach(row => {
+            self.tableRows += `<tr>`;
+            self.tableRows += `
+                <td>
+                    <span class="function edit" id="${row.ID}" onclick="editRow(this)"> edit </span> 
+                    <span class="function delete" id="${row.ID}" onclick="deleteRow(this)"> delete </span>
+                </td>
+            `
+            Object.values(row).forEach(value => {
+                self.tableRows += `<td>${value}</td>`;
+            });
+            self.tableRows += `</tr>`;
+        });
+
+        callback(null, self.tableRows);
+    })
+}
+function GetInputsType(tableName, callback) {
+    let ps = new mssql.Request(connection);
+
+    let self = this;
+    self.inputAdd = ``;
+
+    let inputTableName = `<input type="hidden" name="tableName" value="${tableName}"></input>`;
+
+    let query = `
+        SELECT COLUMN_NAME
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_NAME = '${tableName}';
+    `;
+
+    ps.query(query, (err, data) => {
+        data.recordset.forEach((row, index) => {
+            index != 0 ?
+            self.inputAdd += `<input class="add" type="text" name="add-${row.COLUMN_NAME}" placeholder="${row.COLUMN_NAME}" required /><br/>`
+            : self.inputAdd += inputTableName;
+        });
+
+        callback(null, self.inputAdd);
+    });
+}
+
+
+function render(req, res, tableName) {
+    let data = 'hello world';
+    tableName = 'Products'
+
+    GetThead(tableName, (err, tableThead) => {
+        GetTbody(tableName, (err, tableTbody) => {
+            let prefix = 'add'; 
+
+            GetInputsType(tableName, (err, inputAdd) => {
+                res.render('adminPanel', {
+                    thead: tableThead, tbody: tableTbody, data: data,
+                    inputAdd: inputAdd
+                });
+            });
+        });
+    });
+}
+
+
+// ADD
+app.post('/add', (req, res) => {
+    const data = req.body;
+
+    console.log(data);
+});
+
+// EDIT
+app.post('/edit', (req, res) => {
+    const data = req.body;
+
+    console.log(data.name);
+    console.log(data.price);
+    console.log(data.description);
+});
+
+// DEL
+app.post('/del', (req, res) => {
+    const data = req.body;
+
+    console.log(data.ID);
+});
+
 
 app.post('/authentication', function(req, res) {
     const login = req.body.login;
@@ -72,7 +198,7 @@ app.post('/authentication', function(req, res) {
                 const user = data.recordset[0];
 
                 if (user.userType == 'admin') {
-                    res.send('admin');
+                    render(req, res);
                 } else if (user.userType == 'user') {
                     res.send('user');
                 }

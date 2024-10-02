@@ -30,6 +30,17 @@ img {
     max-width: 100%;
 }
 
+td {
+    padding: 3px;
+
+    text-align: center;
+}
+
+.tbody input {
+    width: 100%;
+    text-align: center;
+}
+
 .header {
     padding-top: 50px;
     padding-bottom: 53px;
@@ -182,6 +193,15 @@ img {
     animation-fill-mode: forwards;
     animation-delay: .5s;
 }
+
+
+.function {
+    cursor: pointer;
+}
+.function:first-child {
+    margin-right: 5px;
+}
+
 
 @keyframes show {
     0% {

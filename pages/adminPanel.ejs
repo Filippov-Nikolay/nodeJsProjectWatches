@@ -3,9 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- CSS стили --> 
+    <link rel="stylesheet" href="../css/style.css">
+
     <title>Admin Panel</title>
 </head>
 <body>
-    
+    <header class="header">
+
+    </header>
+    <main class="main">
+        <section class="section">
+            <table class="table" border="1">
+                <thead class="thead">
+                    <%- thead %>
+                </thead>
+                <tbody class="tbody">
+                    <%- tbody %>
+                </tbody>
+            </table>
+
+            <%- data %>
+
+            <form method="POST">
+                <%- inputAdd %>
+
+                <button class="btn" type="button" onclick="addData()">Done!</button>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        // Функция для отправки данных на сервер
+        function sendDataToServer(updatedData) {
+            console.log("Request");
+            console.log(updatedData);
+
+            let xhr = new XMLHttpRequest();
+            xhr.open('POST', '/edit', true);
+
+            let data = JSON.stringify(updatedData);
+
+            xhr.setRequestHeader('Content-Type', 'application/json'); 
+            xhr.send(data); 
+        }
+
+        // Функция для отправки данных на добавление
+        function addData() {
+            let inputData = {};
+            let inputs = document.querySelectorAll('.add');
+
+            inputs.forEach(input => {
+                let name = input.getAttribute('name').replace('add-', '');
+                let value = input.value;
+                
+                inputData[name] = value;
+            });
+
+            let tableInput = document.querySelector('input[name="tableName"]');
+            let name = tableInput.getAttribute('name');
+            let value = tableInput.value;
+            inputData[name] = value;
+
+            console.log(inputData);
+
+            let xhr = new XMLHttpRequest();
+            xhr.open('POST', '/add', true);
+
+            let data = JSON.stringify(inputData);
+
+            xhr.setRequestHeader('Content-Type', 'application/json'); 
+            xhr.send(data); 
+        }
+
+        function editRow(button) {
+            var row = button.closest('tr');
+            var editButton = row.querySelector('.edit');
+
+            // Превращаем данные в input'ы
+            // Выбираем нужные ячейки для редактирования
+            var cells = row.querySelectorAll('td:nth-child(n+3):nth-child(-n+6)');
+
+            cells.forEach(function(cell) {
+                var input = document.createElement('input');
+                input.value = cell.textContent;
+                cell.textContent = '';
+                cell.appendChild(input);
+            });
+
+
+            // Меняем текст кнопки
+            editButton.textContent = 'save';
+            editButton.setAttribute('onclick', 'saveRow(this)');
+
+
+            // Добавляем кнопку отмены
+            var cancelButton = document.createElement('span');
+            cancelButton.className = 'function cancel';
+            cancelButton.textContent = 'cancel';
+            cancelButton.onclick = function() { cancelEdit(row); };
+            row.querySelector('td').appendChild(cancelButton);
+        }
+
+        function saveRow(button) {
+            var row = button.closest('tr');
+            var inputs = row.querySelectorAll('input');
+
+            // Собираем данные из input'ов
+            var updatedData = {};
+            updatedData.id = row.cells[1].textContent; // ID товара или строки
+            updatedData.name = inputs[0].value;
+            updatedData.price = inputs[1].value;
+            updatedData.description = inputs[2].value;
+            updatedData.stock = row.cells[5].textContent;
+            updatedData.status = row.cells[6].textContent;
+
+            // Отправляем данные на сервер
+            sendDataToServer(updatedData);
+
+            // Сохраняем данные из input'ов в ячейки
+            inputs.forEach(function(input) {
+                var cell = input.closest('td');
+                cell.textContent = input.value;
+            });
+
+            // Возвращаем текст кнопки "edit"
+            var editButton = row.querySelector('.edit');
+            editButton.textContent = 'edit';
+            editButton.setAttribute('onclick', 'editRow(this)');
+
+            // Убираем кнопку "cancel"
+            var cancelButton = row.querySelector('.cancel');
+            cancelButton.remove();
+        }
+
+        function cancelEdit(row) {
+            // Возвращаем исходные значения и убираем input'ы
+            var inputs = row.querySelectorAll('input');
+            inputs.forEach(function(input) {
+                var cell = input.closest('td');
+                cell.textContent = input.value;  // Возвращаем исходный текст
+            });
+
+            // Меняем кнопку обратно на "edit"
+            var editButton = row.querySelector('.edit');
+            editButton.textContent = 'edit';
+            editButton.setAttribute('onclick', 'editRow(this)');
+
+            // Убираем кнопку "cancel"
+            var cancelButton = row.querySelector('.cancel');
+            cancelButton.remove();
+        }
+
+        function deleteRow(button) {
+            // Создаем окно подтверждения
+            if (confirm("Вы уверены, что хотите удалить этот элемент?")) {
+                var row = button.closest('tr');
+                row.remove();  // Удаляем строку, если нажато "Да"
+
+                console.log(row.cells[1].textContent);
+
+                let xhr = new XMLHttpRequest();
+                xhr.open('POST', '/del', true);
+
+                let data = JSON.stringify({ID: row.cells[1].textContent});
+
+                xhr.setRequestHeader('Content-Type', 'application/json'); 
+                xhr.send(data); 
+            } else { console.log("Удаление отменено."); }
+        }
+    </script>
 </body>
 </html>
