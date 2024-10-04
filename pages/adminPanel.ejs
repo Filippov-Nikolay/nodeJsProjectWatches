@@ -10,27 +10,48 @@
     <title>Admin Panel</title>
 </head>
 <body>
-    <header class="header">
-
-    </header>
     <main class="main">
         <section class="section">
+            <h1 id="table-name" class="section__title"><%- title %></h1>
+            <form method="POST">
+                <select name="selectedTable" id="selectedTable">
+                    <option value="Admins">Admins</option>
+                    <!-- <option value="Basket">Basket</option> -->
+                    <option value="Brands">Brands</option>
+                    <option value="Products" selected>Products</option>
+                    <option value="Users">Users</option>
+                </select>
+                <button type="button" onclick="sendSelected()">Done</button>
+            </form>
+
             <table class="table" border="1">
                 <thead class="thead">
                     <%- thead %>
                 </thead>
                 <tbody class="tbody">
                     <%- tbody %>
+
+                    <!-- Пустая строка для добавления новых данных -->
+                    <!-- <tr id="new-row">
+                        <td><button id="add-button">Добавить</button></td>
+                        <td></td>
+                        <td><input type="text" id="new-name" placeholder="Product Name"></td>
+                        <td><input type="text" id="new-price" placeholder="Price"></td>
+                        <td><input type="text" id="new-description" placeholder="Description"></td>
+                        <td><input type="text" id="new-quantity" placeholder="Quantity"></td>
+                    </tr> -->
                 </tbody>
             </table>
 
-            <%- data %>
-
-            <form method="POST">
-                <%- inputAdd %>
-
-                <button class="btn" type="button" onclick="addData()">Done!</button>
-            </form>
+            <div class="item">
+                <h2 class="item__title">Add Item</h2>
+                <form class="form" method="POST">
+                    <div class="form__inputs">
+                        <%- inputAdd %>
+                    </div>
+                    <button class="btn" type="button" onclick="addData()">Done!</button>
+                </form>
+            </div>
         </section>
     </main>
 
@@ -46,7 +67,31 @@
             let data = JSON.stringify(updatedData);
 
             xhr.setRequestHeader('Content-Type', 'application/json'); 
-            xhr.send(data); 
+            xhr.send(data);
+        }
+
+        // Отправка выбранной таблицы
+        function sendSelected() {
+            const selectedTable = document.getElementById('selectedTable').value;
+
+            let xhr = new XMLHttpRequest();
+
+            xhr.open('POST', '/adminPanel/update', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+
+            // Обрабатываем ответ от сервера
+            xhr.onreadystatechange = () => {
+                const response = JSON.parse(xhr.responseText);
+
+                // Обновляем содержимое таблицы на странице
+                document.querySelector('.section__title').innerHTML = response.title;
+                document.querySelector('.thead').innerHTML = response.thead;
+                document.querySelector('.tbody').innerHTML = response.tbody;
+                document.querySelector('.form__inputs').innerHTML = response.inputAdd;
+            };
+
+            // Отправляем запрос с выбранной таблицей в теле
+            xhr.send(JSON.stringify({ selectedTable: selectedTable }));
         }
 
         // Функция для отправки данных на добавление
@@ -77,13 +122,65 @@
             xhr.send(data); 
         }
 
+        // Функция для добавления новой строки в таблицу
+        // document.getElementById('add-button').addEventListener('click', function() {
+        //     // Получаем значения из инпутов
+        //     let newName = document.getElementById('new-name').value;
+        //     let newPrice = document.getElementById('new-price').value;
+        //     let newDescription = document.getElementById('new-description').value;
+        //     let newQuantity = document.getElementById('new-quantity').value;
+
+        //     // Создаем новую строку
+        //     let table = document.getElementById('data-table').getElementsByTagName('tbody')[0];
+        //     let newRow = table.insertRow(-1);  // Вставляем новую строку в конец таблицы
+
+        //     // Добавляем ячейки и данные
+        //     let actionsCell = newRow.insertCell(0);
+        //     let idCell = newRow.insertCell(1);
+        //     let nameCell = newRow.insertCell(2);
+        //     let priceCell = newRow.insertCell(3);
+        //     let descriptionCell = newRow.insertCell(4);
+        //     let quantityCell = newRow.insertCell(5);
+
+        //     // Добавляем кнопки редактирования и удаления
+        //     actionsCell.innerHTML = `
+        //         <span class="function edit">edit</span>
+        //         <span class="function delete">delete</span>
+        //     `;
+            
+        //     // Добавляем значения в ячейки
+        //     idCell.textContent = newId;
+        //     nameCell.textContent = newName;
+        //     priceCell.textContent = newPrice;
+        //     descriptionCell.textContent = newDescription;
+        //     quantityCell.textContent = newQuantity;
+
+        //     // Очищаем инпуты
+        //     document.getElementById('new-id').value = '';
+        //     document.getElementById('new-name').value = '';
+        //     document.getElementById('new-price').value = '';
+        //     document.getElementById('new-description').value = '';
+        //     document.getElementById('new-quantity').value = '';
+
+        //     // Отправка данных на сервер (опционально)
+        //     let newData = {
+        //         name: newName,
+        //         price: newPrice,
+        //         description: newDescription,
+        //         quantity: newQuantity
+        //     };
+
+        //     sendDataToServer(newData);  // Вызываем функцию отправки данных
+        // });
+
+
         function editRow(button) {
             var row = button.closest('tr');
             var editButton = row.querySelector('.edit');
 
             // Превращаем данные в input'ы
             // Выбираем нужные ячейки для редактирования
-            var cells = row.querySelectorAll('td:nth-child(n+3):nth-child(-n+6)');
+            var cells = row.querySelectorAll('td:nth-child(n+3):nth-child(-n+7)');
 
             cells.forEach(function(cell) {
                 var input = document.createElement('input');
@@ -99,7 +196,7 @@
 
 
             // Добавляем кнопку отмены
-            var cancelButton = document.createElement('span');
+            var cancelButton = document.createElement('button');
             cancelButton.className = 'function cancel';
             cancelButton.textContent = 'cancel';
             cancelButton.onclick = function() { cancelEdit(row); };
@@ -109,15 +206,19 @@
         function saveRow(button) {
             var row = button.closest('tr');
             var inputs = row.querySelectorAll('input');
+            let tableName = document.querySelector('.section__title').innerHTML;
 
             // Собираем данные из input'ов
             var updatedData = {};
-            updatedData.id = row.cells[1].textContent; // ID товара или строки
+            updatedData.ID = row.cells[1].textContent;
             updatedData.name = inputs[0].value;
             updatedData.price = inputs[1].value;
             updatedData.description = inputs[2].value;
-            updatedData.stock = row.cells[5].textContent;
-            updatedData.status = row.cells[6].textContent;
+            updatedData.discount = inputs[3].value;
+            updatedData.brandID = inputs[4].value;
+            // updatedData.stock = row.cells[5].textContent;
+            // updatedData.status = row.cells[6].textContent;
+            updatedData.tableName = tableName;
 
             // Отправляем данные на сервер
             sendDataToServer(updatedData);

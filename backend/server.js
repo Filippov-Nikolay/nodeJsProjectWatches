@@ -10,6 +10,7 @@ var port = 8080;
 
 // connection
 var connection = require('./config');
+const { title } = require('process');
 
 // Указываем Express, что файлы из папки public должны быть доступны как статические
 // Для Css
@@ -26,15 +27,175 @@ app.set('view engine', 'ejs');
 app.use(express.json());
 
 
-app.get('/', function(req, res) {
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, "../index.html"));
+});
+app.get('/index', (req, res) => {
     res.sendFile(path.join(__dirname, "../index.html"));
 });
 
 
-app.get('/signIn', function(req, res) {
+function executeReq(ps, query, inserts, message) {
+    var transaction = new mssql.Transaction(connection);
+
+    transaction.begin(function (err) {
+        ps.prepare(query, function (err) {
+            if (err) {
+                console.log(err);
+                transaction.rollback(function(err) {
+                    console.log('rollback successful');
+                });
+            } else {
+                transaction.commit(function(err, data) {
+                    ps.execute(inserts, function (err) {
+                        if (err) console.log(err);
+
+                        console.log(`${message}`);
+
+                        ps.unprepare();
+                    });
+                });
+            }
+        });
+    });
+}
+
+
+function render(req, res, tableName) {
+    if (tableName == undefined || tableName == null)
+        tableName = 'Products';
+
+    GetThead(tableName, (err, tableThead) => {
+        GetTbody(tableName, (err, tableTbody) => {
+            GetInputsType(tableName, (err, inputAdd) => {
+                res.render('adminPanel', {
+                    title: tableName,
+                    thead: tableThead, tbody: tableTbody,
+                    inputAdd: inputAdd
+                });
+            });
+        });
+    });
+}
+
+
+
+app.get('/signIn', (req, res) => {
     res.sendFile(path.join(__dirname, "../signIn.html"));
 });
+app.post('/authentication', (req, res) => {
+    const login = req.body.login;
+    const password = req.body.password;
 
+    console.log(`${login}, ${password}`);
+
+    var ps = new mssql.PreparedStatement(connection);
+    ps.input('login', mssql.NVarChar);
+    ps.input('password', mssql.NVarChar);
+
+    let query = `
+        SELECT login, 'admin' AS userType
+        FROM Admins
+        WHERE Admins.login = @login AND Admins.password = @password
+
+        UNION
+
+        SELECT login, 'user' AS userType
+        FROM Users 
+        WHERE Users.login = @login AND Users.password = @password
+    `;
+
+    let insert = {
+        login: login,
+        password: password
+    }
+
+    ps.prepare(query, (err) => {
+        if (err) { console.error('Error preparing statement:', err); }
+
+        ps.execute(insert, (err, data) => {
+            if (err) { console.error('Error executing prepared statement:', err); }
+
+            console.log(data.recordset[0]);
+
+            if (data.recordset.length != 0) {
+                const user = data.recordset[0];
+
+                if (user.userType == 'admin') {
+                    res.redirect('/adminPanel');
+                } else if (user.userType == 'user') {
+                    res.send('user');
+                }
+            } else {
+                res.status(401).json({ error: 'Invalid login or password' });
+            }
+            ps.unprepare();
+        });
+    });
+});
+app.get('/adminPanel', (req, res) => {
+    render(req, res);
+});
+app.post('/adminPanel/update', (req, res) => {
+    const tableName = req.body.selectedTable;
+    
+    GetThead(tableName, (err, tableThead) => {
+        GetTbody(tableName, (err, tableTbody) => {
+            GetInputsType(tableName, (err, inputAdd) => {
+                res.json({
+                    title: tableName,
+                    thead: tableThead, tbody: tableTbody,
+                    inputAdd: inputAdd
+                });
+            });
+        });
+    });
+});
+
+
+
+
+
+
+app.get('/signUp', (req, res) => {
+    res.sendFile(path.join(__dirname, "../signUp.html"));
+});
+app.post('/registration', (req, res) => {
+    const login = req.body.login;
+    const email = req.body.email;
+    const password = req.body.password;
+
+    console.log(`${login}, ${email}, ${password}`);
+
+    var ps = new mssql.PreparedStatement(connection);
+    ps.input('login', mssql.NVarChar);
+    ps.input('email', mssql.NVarChar);
+    ps.input('password', mssql.NVarChar);
+
+    let query = `
+        INSERT INTO Users (login, email, password)
+        VALUES (@login, @email, @password)
+    `;
+
+    let insert = {
+        login: login,
+        email: email,
+        password: password
+    }
+
+    ps.prepare(query, (err) => {
+        if (err) { console.error('Error preparing statement:', err); }
+
+        ps.execute(insert, (err) => {
+            if (err) { console.error('Error executing prepared statement:', err); }
+
+            console.log('add item');
+            res.send('User add');
+
+            ps.unprepare();
+        });
+    });
+});
 
 
 
@@ -77,8 +238,8 @@ function GetTbody(tableName, callback) {
             self.tableRows += `<tr>`;
             self.tableRows += `
                 <td>
-                    <span class="function edit" id="${row.ID}" onclick="editRow(this)"> edit </span> 
-                    <span class="function delete" id="${row.ID}" onclick="deleteRow(this)"> delete </span>
+                    <button class="function edit" id="${row.ID}" onclick="editRow(this)"> edit </button> 
+                    <button class="function delete" id="${row.ID}" onclick="deleteRow(this)"> delete </button>
                 </td>
             `
             Object.values(row).forEach(value => {
@@ -116,23 +277,29 @@ function GetInputsType(tableName, callback) {
 }
 
 
-function render(req, res, tableName) {
-    let data = 'hello world';
-    tableName = 'Products'
 
-    GetThead(tableName, (err, tableThead) => {
-        GetTbody(tableName, (err, tableTbody) => {
-            let prefix = 'add'; 
+function GetFields(tableName, callback) {
+    let ps = new mssql.Request(connection);
 
-            GetInputsType(tableName, (err, inputAdd) => {
-                res.render('adminPanel', {
-                    thead: tableThead, tbody: tableTbody, data: data,
-                    inputAdd: inputAdd
-                });
-            });
+    let self = this;
+    self.tableRows = ``;
+
+    let query = `
+        SELECT COLUMN_NAME
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_NAME = '${tableName}';
+    `;
+
+    ps.query(query, (err, data) => {
+        const fieldsObject = {};
+        data.recordset.forEach((row, index) => {
+            fieldsObject[index] = row.COLUMN_NAME;
         });
+
+        callback(null, fieldsObject);
     });
 }
+
 
 
 // ADD
@@ -146,9 +313,39 @@ app.post('/add', (req, res) => {
 app.post('/edit', (req, res) => {
     const data = req.body;
 
-    console.log(data.name);
-    console.log(data.price);
-    console.log(data.description);
+    console.log(data.tableName);
+
+    GetFields(data.tableName, (err, rows) => {
+        const ps = new mssql.PreparedStatement(connection);
+        const inserts = {};
+        
+        console.log(rows)
+
+        Object.keys(rows).forEach((index) => {
+            const fieldName = rows[index]; 
+            const fieldValue = req.body[fieldName];
+
+            console.log(`${fieldName}: ${fieldValue}`);
+
+            // Определяем тип параметра
+            const paramType = typeof fieldValue === 'number' ? mssql.Int : mssql.NVarChar;
+
+            ps.input(fieldName, paramType);
+
+            inserts[fieldName] = fieldValue;
+        });
+
+        let query = `
+            UPDATE ${data.tableName}
+            SET ${Object.keys(rows).slice(1).map(item => `${rows[item]}=@${rows[item]}`).join(', ')}
+            WHERE ${rows[0]}=@${rows[0]};
+        `;
+        console.log(query);
+
+        console.log(inserts);
+
+        executeReq(ps, query, inserts, 'Edit item');
+    });
 });
 
 // DEL
@@ -159,59 +356,7 @@ app.post('/del', (req, res) => {
 });
 
 
-app.post('/authentication', function(req, res) {
-    const login = req.body.login;
-    const password = req.body.password;
-
-    console.log(`${login}, ${password}`);
-
-    var ps = new mssql.PreparedStatement(connection);
-    ps.input('login', mssql.NVarChar);
-    ps.input('password', mssql.NVarChar);
-
-    let query = `
-        SELECT login, 'admin' AS userType
-        FROM Admins
-        WHERE Admins.login = @login AND Admins.password = @password
-
-        UNION
-
-        SELECT login, 'user' AS userType
-        FROM Users 
-        WHERE Users.login = @login AND Users.password = @password
-    `;
-
-    let insert = {
-        login: login,
-        password: password
-    }
-
-    ps.prepare(query, (err) => {
-        if (err) { console.error('Error preparing statement:', err); }
-
-        ps.execute(insert, (err, data) => {
-            if (err) { console.error('Error executing prepared statement:', err); }
-
-            console.log(data.recordset[0]);
-
-            if (data.recordset.length != 0) {
-                const user = data.recordset[0];
-
-                if (user.userType == 'admin') {
-                    render(req, res);
-                } else if (user.userType == 'user') {
-                    res.send('user');
-                }
-            } else {
-                res.status(401).json({ error: 'Invalid login or password' });
-            }
-            ps.unprepare();
-        });
-    });
-});
-
-
-app.get('/samsung', function(req, res) {
+app.get('/samsung', (req, res) => {
     /*
         Создать заголовок
         создать запрос и получить данные
@@ -232,15 +377,15 @@ app.get('/samsung', function(req, res) {
         inputAdd: null, inputEdit: null, inputDelete: null
     });
 });
-app.get('/apple', function(req, res) {
+app.get('/apple', (req, res) => {
     res.sendFile(path.join(__dirname, "../index-apple.html"));
 });
-app.get('/alfex', function(req, res) {
+app.get('/alfex', (req, res) => {
     res.sendFile(path.join(__dirname, "../index-alfex.html"));
 });
 
 
-app.get('/discounts', function(req, res) {
+app.get('/discounts', (req, res) => {
     res.sendFile(path.join(__dirname, "../discounts.html"));
 });
 

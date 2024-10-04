@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Antonio:wght@300;700&display=swap" rel="stylesheet">  
+        <link rel="shortcut icon" href="img/mini-logo.png" type="image/x-icon">  
+        <link rel="stylesheet" href="css/style.css">
+        <link rel="stylesheet" href="css/nav.css">
+        <link rel="stylesheet" href="css/info.css">
+
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+        <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-M2WPLWH500"></script>
+        <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-M2WPLWH500');
+        </script> -->
+
+        <title>Sign In</title>
+    </head>
+<body>
+    <div class="header">
+        <div class="container">
+            <div class="header__nav">
+                <a href="index.html" class="nav__link"><img src="img/logo.png" alt="" class="nav__logo"></a>
+            </div>
+            <div class="header__content">
+                <h2 class="header__title">Регистрация</h2>
+                <div class="header__form">
+                    <!-- В атрибуте action, указан путь к php файлу, атрибут method имеет значение POST(скрытая отправка данных) -->
+                    <form action="registration" method="POST">
+                        <div class="form__item">
+                            <p>Введите логин: </p>
+                            <input type="text" name="login">
+                        </div>
+                        <div class="form__item">
+                            <p>Введите почту: </p>
+                            <input type="email" name="email">
+                        </div>
+                        <div class="form__item">
+                            <p>Введите пароль: </p>
+                            <input type="password" name="password">
+                        </div>
+                        <button class="button form__button">Отправить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="footer anim-bloc">
+        <div class="container">
+            <div class="footer-content">
+                <div class="socials">
+                    <div class="social">
+                        <div class="social-img-text"><a href="#"><img src="img/tg.png" alt="">telegram</a></div>
+                    </div>
+                    <div class="social">
+                        <div class="social-img-text"><a href="#"><img src="img/gm.png" alt="">gmail</a></div>
+                    </div>
+                    <div class="social">
+                        <div class="social-img-text"><a href="#"><img src="img/vb.png" alt="">viber</a></div>
+                    </div>
+                    <div class="social">
+                        <div class="social-img-text"><a href="#"><img src="img/inst.png" alt="">instagram</a></div>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <div class="copyright">
+                        &copy; 2021 Все права защищены. Сайт создал ▀▀▀▀▀▀▀▀▀▀▀▀▀
+                    </div>
+                    <div class="footer-navigation">
+                        <ul class="nav">
+                            <li><a href="index.html">Бренды</a></li>
+                            <li><a href="discounts.html">Скидки</a></li>
+                            <li><a href="index-EliteWatches.html">Элитные часы</a></li>
+                            <li><a href="index-ManWatches.html">Мужские часы</a></li>
+                            <li><a href="index-WomenWatches.html">Женские часы</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
