@@ -458,7 +458,7 @@ app.post('/del', (req, res) => {
 });
 
 
-app.get('/products/:brand', function(req, res) {
+app.get('/brand/:brand', function(req, res) {
     const brand = req.params.brand;
 
 
@@ -483,6 +483,63 @@ app.get('/products/:brand', function(req, res) {
 });
 
 
+
+app.get('/manwatches/:category', function(req, res) {
+    const brand = req.params.category;
+
+
+    const request = new mssql.Request(connection);
+    const query = `
+        SELECT Products.* 
+        FROM Products JOIN Types 
+        ON Products.typesID = Types.ID JOIN Gender ON Products.genderID = Gender.ID
+        WHERE Types.name = @category AND Gender.name = @gender
+    `;
+    
+    request.input('category', mssql.VarChar, brand);
+    request.input('gender', mssql.VarChar, 'Man');
+    request.query(query, (err, result) => {
+        if (err) {
+            console.log("Request execution error: ", err);
+            return res.send("Error loading data");
+        }
+
+        if (result.recordset.length > 0) {
+            res.render('products', { brand: brand, products: result.recordset });
+        } else {
+            res.send("No products found for this brand");
+        }
+    });
+});
+
+
+app.get('/womenwatches/:category', function(req, res) {
+    const brand = req.params.category;
+
+
+    const request = new mssql.Request(connection);
+    const query = `
+        SELECT Products.* 
+        FROM Products JOIN Types 
+        ON Products.typesID = Types.ID JOIN Gender ON Products.genderID = Gender.ID
+        WHERE Types.name = @category AND Gender.name = @gender
+    `;
+    
+    request.input('category', mssql.VarChar, brand);
+    request.input('gender', mssql.VarChar, 'Women');
+    request.query(query, (err, result) => {
+        if (err) {
+            console.log("Request execution error: ", err);
+            return res.send("Error loading data");
+        }
+
+        if (result.recordset.length > 0) {
+            res.render('products', { brand: brand, products: result.recordset });
+        } else {
+            res.send("No products found for this brand");
+        }
+    });
+});
 
 
 app.listen(port, function() { 
