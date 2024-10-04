@@ -442,6 +442,30 @@ app.get('/products/:brand', function(req, res) {
 
 
 
+app.get('/products/:category', function(req, res) {
+    const brand = req.params.brand;
+
+
+    const request = new mssql.Request(connection);
+    const query = `
+        SELECT Products.* FROM Products JOIN Gender ON Products.genderID = Gender.ID WHERE Gender.name = @category
+    `;
+    
+    request.input('category', mssql.VarChar, brand);
+    request.query(query, (err, result) => {
+        if (err) {
+            console.log("Request execution error: ", err);
+            return res.send("Error loading data");
+        }
+
+        if (result.recordset.length > 0) {
+            res.render('products', { brand: brand, products: result.recordset });
+        } else {
+            res.send("No products found for this brand");
+        }
+    });
+});
+
 
 app.listen(port, function() { 
     console.log('app listening on port ' + port);
