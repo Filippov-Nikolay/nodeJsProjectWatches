@@ -30,15 +30,33 @@ img {
     max-width: 100%;
 }
 
+
+table {
+    font-size: 13px;
+    cursor: default;
+}
 td {
     padding: 3px;
 
     text-align: center;
 }
 
-.tbody input {
+.tbody input,
+.thead input {
     width: 100%;
     text-align: center;
+    background-color: transparent;
+}
+.thead button {
+    width: 100%;
+}
+.wrapper-flex {
+    display: flex;
+    justify-content: space-between;
+}
+
+tr:hover {
+    background-color: rgb(227, 227, 227);
 }
 
 .header {
