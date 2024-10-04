@@ -35,7 +35,7 @@ app.get('/index', (req, res) => {
 });
 
 
-function executeReq(ps, query, inserts, message) {
+function executeReq(ps, query, inserts, message, callback) {
     var transaction = new mssql.Transaction(connection);
 
     transaction.begin(function (err) {
@@ -47,12 +47,14 @@ function executeReq(ps, query, inserts, message) {
                 });
             } else {
                 transaction.commit(function(err, data) {
-                    ps.execute(inserts, function (err) {
+                    ps.execute(inserts, function (err, result) {
                         if (err) console.log(err);
 
                         console.log(`${message}`);
-
                         ps.unprepare();
+
+                        // Возвращаем успешный результат
+                        callback(null, result);
                     });
                 });
             }
@@ -141,12 +143,9 @@ app.post('/adminPanel/update', (req, res) => {
     
     GetThead(tableName, (err, tableThead) => {
         GetTbody(tableName, (err, tableTbody) => {
-            GetInputsType(tableName, (err, inputAdd) => {
-                res.json({
-                    title: tableName,
-                    thead: tableThead, tbody: tableTbody,
-                    inputAdd: inputAdd
-                });
+            res.json({
+                title: tableName,
+                thead: tableThead, tbody: tableTbody
             });
         });
     });
@@ -201,6 +200,7 @@ app.post('/registration', (req, res) => {
 
 function GetThead(tableName, callback) {
     let ps = new mssql.Request(connection);
+    let tableNameAndButton = `<td><button type="btn" name="tableName" value="${tableName}" onclick="addData()">Add</button></td><td></td>`;
 
     let self = this;
     self.tableRows = ``;
@@ -213,9 +213,17 @@ function GetThead(tableName, callback) {
 
     ps.query(query, (err, data) => {
         self.tableRows += '<tr>';
-        self.tableRows += `<td>Function</td>`;
+            self.tableRows += `<td>Function</td>`;
+            data.recordset.forEach((row, index) => {
+                self.tableRows += `<td>${row.COLUMN_NAME}</td>`;
+            });
+        self.tableRows += '</tr>';
+
+        self.tableRows += '<tr>';
         data.recordset.forEach((row, index) => {
-            self.tableRows += `<td>${row.COLUMN_NAME}</td>`;
+            index != 0 ?
+            self.tableRows += `<td><input class="add" type="text" name="add-${row.COLUMN_NAME}" placeholder="${row.COLUMN_NAME}" required /></td>`
+            : self.tableRows += tableNameAndButton;
         });
         self.tableRows += '</tr>';
 
@@ -234,14 +242,14 @@ function GetTbody(tableName, callback) {
     `;
 
     ps.query(query, (err, data) => {
-        data.recordset.forEach(row => {
+        data.recordset.forEach((row, index) => {
             self.tableRows += `<tr>`;
             self.tableRows += `
                 <td>
                     <button class="function edit" id="${row.ID}" onclick="editRow(this)"> edit </button> 
                     <button class="function delete" id="${row.ID}" onclick="deleteRow(this)"> delete </button>
                 </td>
-            `
+            `;
             Object.values(row).forEach(value => {
                 self.tableRows += `<td>${value}</td>`;
             });
@@ -301,6 +309,40 @@ function GetFields(tableName, callback) {
 }
 
 
+function GetLastID(tableName, callback) {
+    const ps = new mssql.PreparedStatement(connection);
+
+    // Формируем запрос для получения последнего ID
+    const query = `
+        SELECT MAX(ID) as lastID 
+        FROM ${tableName};
+    `;
+
+    ps.prepare(query, function(err) {
+        if (err) {
+            console.error('Ошибка при подготовке запроса:', err);
+            return callback(err, null);
+        }
+
+        ps.execute({}, function(err, data) {
+            if (err) {
+                console.error('Ошибка при выполнении запроса:', err);
+                return callback(err, null);
+            }
+
+            // Получаем последний ID из результата
+            const lastID = data.recordset[0].lastID;
+
+            // Освобождаем ресурсы
+            ps.unprepare();
+
+            // Возвращаем последний ID через callback
+            callback(null, lastID);
+        });
+    });
+}
+
+
 
 // ADD
 app.post('/add', (req, res) => {
@@ -329,14 +371,21 @@ app.post('/add', (req, res) => {
 
         // Формируем динамический запрос на добавление
         let query = `
-        INSERT INTO ${data.tableName} (${Object.keys(rows).slice(1).map(item => rows[item]).join(', ')})
-        VALUES (${Object.keys(rows).slice(1).map(item => `@${rows[item]}`).join(', ')});
-    `;
+    INSERT INTO ${data.tableName} (${Object.keys(rows).slice(1).map(item => rows[item]).join(', ')})
+    VALUES (${Object.keys(rows).slice(1).map(item => `@${rows[item]}`).join(', ')});
+`;
         console.log(query);
-
         console.log(inserts);
 
-        executeReq(ps, query, inserts, 'Add item');
+        executeReq(ps, query, inserts, 'Add item', function(err, result) {
+            if (err) { return res.status(500).json({ error: 'Error while adding data', details: err }); }
+
+            GetLastID(data.tableName, (err, lastID) => {
+                data.ID = lastID;
+                console.log(data.ID);
+                res.json(data);
+            });
+        });
     });
 });
 
@@ -375,7 +424,9 @@ app.post('/edit', (req, res) => {
 
         console.log(inserts);
 
-        executeReq(ps, query, inserts, 'Edit item');
+        executeReq(ps, query, inserts, 'Edit item', function(err, result) {
+            if (err) { return res.status(500).json({ error: 'Error while adding data', details: err }); }
+        });
     });
 });
 
@@ -392,25 +443,16 @@ app.post('/del', (req, res) => {
     const ps = new mssql.PreparedStatement(connection);
     ps.input('ID', mssql.Int);
 
-    let query = `
-        DELETE FROM ${data.tableName} WHERE ID = @ID;
-    `;
+    GetFields(data.tableName, (err, rows) => {
+        const inserts = { ID: req.body[rows[0]] };
+        console.log(inserts);
 
-    ps.prepare(query, (err) => {
-        if (err) {
-            console.error('Error preparing request:', err);
-            return res.status(500).json({ error: 'Server Error' });
-        }
+        let query = `
+            DELETE FROM ${data.tableName} WHERE ID = @ID;
+        `;
 
-        ps.execute({ ID: data.ID }, (err) => {
-            if (err) {
-                console.error('Query execution error:', err);
-                return res.status(500).json({ error: 'Server Error' });
-            }
-
-            console.log('The entry has been deleted.');
-            res.json({ success: true });
-            ps.unprepare();
+        executeReq(ps, query, inserts, 'Delete item', function(err, result) {
+            if (err) { return res.status(500).json({ error: 'Error while adding data', details: err }); }
         });
     });
 });
