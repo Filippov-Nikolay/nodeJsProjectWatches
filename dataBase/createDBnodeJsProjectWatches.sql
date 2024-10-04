@@ -91,7 +91,7 @@ END
 
 INSERT INTO Gender (name) 
 VALUES 
-('Man'),
+('Men'),
 ('Women');
 
 -- Таблица Types
