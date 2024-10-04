@@ -5,7 +5,7 @@ var config = {
     user: 'admin',                      // пользователь базы данных
     password: 'admin',                  // пароль пользователя 
     server: 'LAPTOP-31VSBGAE',          // хост
-    database: 'Watches',               // имя бд
+    database: 'Watches',                // имя бд
     port: 1433,                         // порт, на котором запущен sql server
     options: {
         encrypt: true,                  // Использование SSL/TLS
