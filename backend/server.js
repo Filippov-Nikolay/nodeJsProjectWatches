@@ -481,7 +481,55 @@ app.get('/brand/:brand', function(req, res) {
         }
     });
 });
+app.get('/brand', function(req, res) {
+    const brand = '';
 
+    const request = new mssql.Request(connection);
+    const query = `
+        SELECT Products.* FROM Products
+    `;
+    
+    request.input('brand', mssql.VarChar, brand);
+    request.query(query, (err, result) => {
+        if (err) {
+            console.log("Request execution error: ", err);
+            return res.send("Error loading data");
+        }
+
+        if (result.recordset.length > 0) {
+            res.render('products', { brand: brand, products: result.recordset });
+        } else {
+            res.send("No products found for this brand");
+        }
+    });
+});
+
+
+app.get('/e', (req, res) => {
+    const brand = 'Elite';
+
+    const request = new mssql.Request(connection);
+    const query = `
+        SELECT Products.* 
+        FROM Products JOIN Types 
+        ON Products.typesID = Types.ID
+        WHERE Types.name = @category
+    `;
+    
+    request.input('category', mssql.VarChar, 'Elite');
+    request.query(query, (err, result) => {
+        if (err) {
+            console.log("Request execution error: ", err);
+            return res.send("Error loading data");
+        }
+
+        if (result.recordset.length > 0) {
+            res.render('products', { brand: brand, products: result.recordset });
+        } else {
+            res.send("No products found for this brand");
+        }
+    });
+})
 
 
 app.get('/m/:category', function(req, res) {
@@ -511,6 +559,29 @@ app.get('/m/:category', function(req, res) {
         }
     });
 });
+app.get('/m', function(req, res) {
+    const brand = 'Man';
+    const request = new mssql.Request(connection);
+    const query = `
+        SELECT Products.* 
+        FROM Products JOIN Gender ON Products.genderID = Gender.ID
+        WHERE Gender.name = @gender
+    `;
+    
+    request.input('gender', mssql.VarChar, 'Men');
+    request.query(query, (err, result) => {
+        if (err) {
+            console.log("Request execution error: ", err);
+            return res.send("Error loading data");
+        }
+
+        if (result.recordset.length > 0) {
+            res.render('products', { brand: brand, products: result.recordset });
+        } else {
+            res.send("No products found for this brand");
+        }
+    });
+});
 
 
 app.get('/w/:category', function(req, res) {
@@ -526,6 +597,29 @@ app.get('/w/:category', function(req, res) {
     `;
     
     request.input('category', mssql.VarChar, brand);
+    request.input('gender', mssql.VarChar, 'Women');
+    request.query(query, (err, result) => {
+        if (err) {
+            console.log("Request execution error: ", err);
+            return res.send("Error loading data");
+        }
+
+        if (result.recordset.length > 0) {
+            res.render('products', { brand: brand, products: result.recordset });
+        } else {
+            res.send("No products found for this brand");
+        }
+    });
+});
+app.get('/w', function(req, res) {
+    const brand = 'Woman';
+    const request = new mssql.Request(connection);
+    const query = `
+        SELECT Products.* 
+        FROM Products JOIN Gender ON Products.genderID = Gender.ID
+        WHERE Gender.name = @gender
+    `;
+    
     request.input('gender', mssql.VarChar, 'Women');
     request.query(query, (err, result) => {
         if (err) {
