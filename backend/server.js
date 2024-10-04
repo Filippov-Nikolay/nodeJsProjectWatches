@@ -329,9 +329,9 @@ app.post('/add', (req, res) => {
 
         // Формируем динамический запрос на добавление
         let query = `
-    INSERT INTO ${data.tableName} (${Object.keys(rows).slice(1).map(item => rows[item]).join(', ')})
-    VALUES (${Object.keys(rows).slice(1).map(item => `@${rows[item]}`).join(', ')});
-`;
+        INSERT INTO ${data.tableName} (${Object.keys(rows).slice(1).map(item => rows[item]).join(', ')})
+        VALUES (${Object.keys(rows).slice(1).map(item => `@${rows[item]}`).join(', ')});
+    `;
         console.log(query);
 
         console.log(inserts);
@@ -384,7 +384,7 @@ app.post('/del', (req, res) => {
     const data = req.body;
 
     console.log('Received data for deletion:', data);
-н
+
     if (!data.ID) {
         return res.status(400).json({ error: 'ID not specified' });
     }
@@ -439,15 +439,7 @@ app.get('/products/:brand', function(req, res) {
         }
     });
 });
-app.get('/apple', (req, res) => {
-    res.sendFile(path.join(__dirname, "../index-apple.html"));
-});
-app.get('/alfex', (req, res) => {
-    res.sendFile(path.join(__dirname, "../index-alfex.html"));
-});
-app.get('/discounts', (req, res) => {
-    res.sendFile(path.join(__dirname, "../discounts.html"));
-});
+
 
 
 
