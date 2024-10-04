@@ -484,7 +484,7 @@ app.get('/brand/:brand', function(req, res) {
 
 
 
-app.get('/manwatches/:category', function(req, res) {
+app.get('/m/:category', function(req, res) {
     const brand = req.params.category;
 
 
@@ -497,7 +497,7 @@ app.get('/manwatches/:category', function(req, res) {
     `;
     
     request.input('category', mssql.VarChar, brand);
-    request.input('gender', mssql.VarChar, 'Man');
+    request.input('gender', mssql.VarChar, 'Men');
     request.query(query, (err, result) => {
         if (err) {
             console.log("Request execution error: ", err);
@@ -513,7 +513,7 @@ app.get('/manwatches/:category', function(req, res) {
 });
 
 
-app.get('/womenwatches/:category', function(req, res) {
+app.get('/w/:category', function(req, res) {
     const brand = req.params.category;
 
 
