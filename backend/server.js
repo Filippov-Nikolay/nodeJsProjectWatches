@@ -306,7 +306,38 @@ function GetFields(tableName, callback) {
 app.post('/add', (req, res) => {
     const data = req.body;
 
-    console.log(data);
+    GetFields(data.tableName, (err, rows) => {
+        const ps = new mssql.PreparedStatement(connection);
+        const inserts = {};
+
+        console.log(rows);
+
+        // Добавляем параметры для каждой колонки
+        Object.keys(rows).forEach((index) => {
+            const fieldName = rows[index]; 
+            const fieldValue = req.body[fieldName];
+
+            console.log(`${fieldName}: ${fieldValue}`);
+
+            // Определяем тип параметра
+            const paramType = typeof fieldValue === 'number' ? mssql.Int : mssql.NVarChar;
+
+            ps.input(fieldName, paramType);
+
+            inserts[fieldName] = fieldValue;
+        });
+
+        // Формируем динамический запрос на добавление
+        let query = `
+    INSERT INTO ${data.tableName} (${Object.keys(rows).slice(1).map(item => rows[item]).join(', ')})
+    VALUES (${Object.keys(rows).slice(1).map(item => `@${rows[item]}`).join(', ')});
+`;
+        console.log(query);
+
+        console.log(inserts);
+
+        executeReq(ps, query, inserts, 'Add item');
+    });
 });
 
 // EDIT
@@ -352,7 +383,36 @@ app.post('/edit', (req, res) => {
 app.post('/del', (req, res) => {
     const data = req.body;
 
-    console.log(data.ID);
+    console.log('Received data for deletion:', data);
+н
+    if (!data.ID) {
+        return res.status(400).json({ error: 'ID not specified' });
+    }
+
+    const ps = new mssql.PreparedStatement(connection);
+    ps.input('ID', mssql.Int);
+
+    let query = `
+        DELETE FROM ${data.tableName} WHERE ID = @ID;
+    `;
+
+    ps.prepare(query, (err) => {
+        if (err) {
+            console.error('Error preparing request:', err);
+            return res.status(500).json({ error: 'Server Error' });
+        }
+
+        ps.execute({ ID: data.ID }, (err) => {
+            if (err) {
+                console.error('Query execution error:', err);
+                return res.status(500).json({ error: 'Server Error' });
+            }
+
+            console.log('The entry has been deleted.');
+            res.json({ success: true });
+            ps.unprepare();
+        });
+    });
 });
 
 
